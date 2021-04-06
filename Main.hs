@@ -32,7 +32,7 @@ pastesDir = "pastes"
 getAvailableUuid :: IO String 
 getAvailableUuid = do
     uuid <- nextRandom
-    doesExist <- doesFileExist (pastesDir ++ "/" ++ show uuid)
+    doesExist <- doesFileExist (makePath pastesDir (show uuid))
     if doesExist then getAvailableUuid else return $ show uuid
 
 makePath :: String -> String -> String
