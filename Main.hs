@@ -69,4 +69,4 @@ main = do
     setSGR [SetColor Foreground Vivid Green]
     putStrLn $ "pastes will be saved to the " ++ makePath currentDir pastesDir ++ " folder"
     createDirectoryIfMissing False pastesDir
-    runSpock 3000 (spock cfg app)
+    runSpock 3849 (spock cfg app)
