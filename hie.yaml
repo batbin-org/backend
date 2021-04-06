@@ -1,0 +1,4 @@
+cradle:
+  cabal:
+    - path: "./Main.hs"
+      component: "BatbinBackend:exe:BatbinBackend"
