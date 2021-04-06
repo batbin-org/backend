@@ -10,7 +10,7 @@ build-type:          Simple
 
 executable BatbinBackend
   main-is:             Main.hs
-  build-depends:       base >=4.13 && <4.14
+  build-depends:       base >=4.10 && <4.20
                      , Spock
                      , text
                      , aeson
