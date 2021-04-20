@@ -37,7 +37,7 @@ getAvailableUuid = do
     uuid <- nextRandom
     pdir <- liftIO pastesDir
     doesExist <- doesFileExist (pdir ++ "/" ++ show uuid)
-    if doesExist then getAvailableUuid else return $ show uuid
+    if doesExist then getAvailableUuid else return $ T.unpack $ replace "-" "" $ T.pack $ show uuid
 
 makePath :: String -> String -> String
 makePath x y = x ++ "/" ++ y
@@ -57,6 +57,7 @@ app = do
              else do
                 uuid <- liftIO getAvailableUuid
                 pdir <- liftIO pastesDir
+                let fileName = replace "-" "" $ T.pack uuid
                 liftIO $ writeFile (makePath pdir uuid) (T.unpack pasteContent)
                 S.json $ getResponse True uuid
     get "/get" $ do
