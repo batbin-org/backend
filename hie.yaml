@@ -1,4 +1,10 @@
 cradle:
   cabal:
-    - path: "./Main.hs"
+    - path: "src/Main.hs"
+      component: "BatbinBackend:exe:BatbinBackend"
+
+    - path: "src/Utils.hs"
+      component: "BatbinBackend:exe:BatbinBackend"
+
+    - path: "src/Routes.hs"
       component: "BatbinBackend:exe:BatbinBackend"
