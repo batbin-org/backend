@@ -12,16 +12,20 @@ import Data.Text as T
 app :: Server ()
 app = do
     get root $ html "<h1>Batbin API</h1>"
+
     post "/set" $ do
-        pasteContent <- param' "content"
-        if T.length pasteContent > 12000
-             then S.json $ getResponse False "Paste too large!"
-             else do
-                uuid <- liftIO getAvailableUuid
-                pdir <- liftIO pastesDir
-                let fileName = replace "-" "" $ T.pack uuid
-                liftIO $ writeFile (makePath pdir uuid) (T.unpack pasteContent)
-                S.json $ getResponse True uuid
+      pasteContent <- param' "content"
+      if T.length pasteContent > 12000 then
+         S.json $ getResponse False "Paste too large!"
+      else if T.length pasteContent == 0 then
+         S.json $ getResponse False "Paste cannot be empty!"
+      else
+         do
+            uuid <- liftIO getAvailableUuid
+            pdir <- liftIO pastesDir
+            liftIO $ writeFile (makePath pdir uuid) (T.unpack pasteContent)
+            S.json $ getResponse True uuid
+
     get "/get" $ do
         id <- param' "id"
         do
