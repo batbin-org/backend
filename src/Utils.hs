@@ -12,8 +12,10 @@ import Data.Aeson
 import Data.UUID.V4
 import Control.Monad.IO.Class
 import System.Directory
-import Data.Maybe (fromJust)
-import System.Path.NameManip (guess_dotdot, absolute_path)
+import Data.Maybe
+import System.Path.NameManip
+import Data.IP
+import Network.Socket
 
 data Response = Response
   { status :: String
@@ -44,3 +46,9 @@ absolutize :: String -> IO String
 absolutize aPath = do
         pathMaybeWithDots <- absolute_path aPath
         return $ fromJust $ guess_dotdot pathMaybeWithDots
+
+sockAddrToIP :: SockAddr -> IP
+sockAddrToIP sockAddr = case sockAddr of
+    SockAddrInet _port hostAddress -> IPv4 $ fromHostAddress hostAddress
+    SockAddrInet6 _port _flowInfo hostAddress6 _scopeID -> IPv6 $ fromHostAddress6 hostAddress6
+    SockAddrUnix _ -> error "UNIX address found on the web!? What?!"

@@ -8,6 +8,7 @@ import Control.Monad.IO.Class
 import System.Directory
 import Data.List (isPrefixOf)
 import Data.Text as T
+import Network.Wai (remoteHost)
 
 app :: Server ()
 app = do
@@ -15,6 +16,11 @@ app = do
 
     post "/paste" $ do
       pasteContent <- param' "content"
+
+      -- get user ip
+      host <- remoteHost <$> request
+      liftIO $ print $ sockAddrToIP host
+
       if T.length pasteContent > 12000 then
          S.json $ getResponse False "Paste too large!"
       else if T.length pasteContent == 0 then
