@@ -13,7 +13,7 @@ app :: Server ()
 app = do
     get root $ html "<h1>Batbin API</h1>"
 
-    post "/set" $ do
+    post "/paste" $ do
       pasteContent <- param' "content"
       if T.length pasteContent > 12000 then
          S.json $ getResponse False "Paste too large!"
@@ -26,14 +26,12 @@ app = do
             liftIO $ writeFile (makePath pdir uuid) (T.unpack pasteContent)
             S.json $ getResponse True uuid
 
-    get "/get" $ do
-        id <- param' "id"
+    get ("/paste" <//> var) $ \id -> do
         do
             pdir <- liftIO pastesDir
             filePath <- liftIO $ absolutize $ makePath pdir id
             if pdir `Data.List.isPrefixOf` filePath then
                 do
-                    liftIO $ putStrLn filePath
                     doesExist <- liftIO $ doesFileExist filePath
                     if doesExist then
                         do
