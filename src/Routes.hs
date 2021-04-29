@@ -16,7 +16,7 @@ import Control.Monad.Except
 import Network.Wai (remoteHost)
 
 somethingWrong = "Something went wrong!"
-pastesPerHour = 2
+pastesPerHour = 80
 
 app :: Server ()
 app = do
