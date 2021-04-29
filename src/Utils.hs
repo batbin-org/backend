@@ -47,8 +47,8 @@ absolutize aPath = do
         pathMaybeWithDots <- absolute_path aPath
         return $ fromJust $ guess_dotdot pathMaybeWithDots
 
-sockAddrToIP :: SockAddr -> IP
+sockAddrToIP :: SockAddr -> IO String
 sockAddrToIP sockAddr = case sockAddr of
-    SockAddrInet _port hostAddress -> IPv4 $ fromHostAddress hostAddress
-    SockAddrInet6 _port _flowInfo hostAddress6 _scopeID -> IPv6 $ fromHostAddress6 hostAddress6
+    SockAddrInet _port hostAddress -> return $ show $ IPv4 $ fromHostAddress hostAddress
+    SockAddrInet6 _port _flowInfo hostAddress6 _scopeID -> return $ show $ IPv6 $ fromHostAddress6 hostAddress6
     SockAddrUnix _ -> error "UNIX address found on the web!? What?!"
