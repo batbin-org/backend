@@ -14,9 +14,11 @@ import Data.ByteString.UTF8 as B
 import Data.ByteString.Char8 as BS
 import Control.Monad.Except
 import Network.Wai (remoteHost)
+import Text.Regex
 
 somethingWrong = "Something went wrong!"
 pastesPerHour = 80
+uuidRegex = mkRegex "^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$"
 
 app :: Server ()
 app = do
@@ -60,18 +62,21 @@ app = do
                 S.json $ getResponse True uuid
 
     S.get ("paste" <//> var) $ \id -> do
-        pdir <- liftIO pastesDir
-        filePath <- liftIO $ absolutize $ makePath pdir id
-        if pdir `Data.List.isPrefixOf` filePath then
-            do
-                doesExist <- liftIO $ doesFileExist filePath
-                if doesExist then
+        case matchRegex uuidRegex id of
+            Nothing -> S.json $ getResponse False "Improper paste ID provided!"
+            _ -> do
+                pdir <- liftIO pastesDir
+                filePath <- liftIO $ absolutize $ makePath pdir id
+                if pdir `Data.List.isPrefixOf` filePath then
                     do
-                        output <- liftIO $ P.readFile filePath
-                        text $ T.pack output
+                        doesExist <- liftIO $ doesFileExist filePath
+                        if doesExist then
+                            do
+                                output <- liftIO $ P.readFile filePath
+                                text $ T.pack output
+                        else
+                            do
+                                S.json $ getResponse False "This paste does not exist!" 
                 else
                     do
-                        S.json $ getResponse False "This paste does not exist!" 
-        else
-            do
-                S.json $ getResponse False "Can't access pastes outside the paste dir!"
+                        S.json $ getResponse False "Can't access pastes outside the paste dir!"

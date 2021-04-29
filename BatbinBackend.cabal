@@ -28,4 +28,5 @@ executable BatbinBackend
                      , utf8-string
                      , mtl
                      , bytestring
+                     , regex-compat
   default-language:    Haskell2010
