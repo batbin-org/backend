@@ -1,0 +1,19 @@
+name: "Bob The Builder"
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: haskell:8.8.4-buster
+    steps:
+      - run: git clone https://github.com/batbin-org/backend /backend
+      - run: cabal update
+      - run: cd /backend && cabal new-build -O2
+      - uses: actions/upload-artifact@v2
+        with:
+          name: BatbinBackend
+          path: /backend/dist-newstyle/build/x86_64-linux/ghc-8.8.4/BatbinBackend-0.1.0.0/x/BatbinBackend/opt/build/BatbinBackend/BatbinBackend
