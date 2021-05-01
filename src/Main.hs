@@ -12,10 +12,10 @@ import Routes
 
 main :: IO()
 main = do
-    cfg <- defaultSpockCfg () PCNoDatabase ()
     pdir <- liftIO pastesDir
     setSGR [SetColor Foreground Vivid Green]
     putStrLn $ "pastes will be saved to the " ++ pdir ++ " folder"
     setSGR [SetColor Foreground Vivid Yellow]
+    cfg <- defaultSpockCfg () PCNoDatabase ()
     createDirectoryIfMissing False pdir
     runSpock 3849 (spock cfg app)

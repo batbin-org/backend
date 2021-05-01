@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleInstances, UndecidableInstances #-}
 
 module Routes where
 
@@ -11,14 +12,22 @@ import Data.List (isPrefixOf)
 import Data.Text as T
 import Database.Redis as R
 import Data.ByteString.UTF8 as B
-import Data.ByteString.Char8 as BS
+import qualified Data.ByteString.Char8 as BS
 import Control.Monad.Except
 import Network.Wai (remoteHost)
 import Text.Regex
+import SpockRes
 
-somethingWrong = "Something went wrong!"
 pastesPerHour = 80
 uuidRegex = mkRegex "^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$"
+
+-- getOutput :: SpockResT (ActionT m ())
+
+errProneFunc :: Either String Integer
+errProneFunc = Left "Oh no, an error!"
+
+errProneFunc2 :: Either String Integer
+errProneFunc2 = Right 2
 
 app :: Server ()
 app = do
@@ -26,57 +35,55 @@ app = do
 
     S.get root $ html "<h1>Batbin API</h1>"
 
+    S.get "test4" $ do
+        res <- runSpockResT $ do
+            pasteContent <- lift $ param' "content"
+            pure $ "Hello, transformer" ++ pasteContent
+        runBodyRes res
+
     S.post "paste" $ do
-        pasteContent <- param' "content"
+        res <- runSpockResT $ do
+            pasteContent <- lift $ param' "content"
+            host <- lift $ remoteHost <$> request
+            ip <- liftIO $ B.fromString <$> sockAddrToIP host
 
-        host <- remoteHost <$> request
-        ip <- liftIO $ B.fromString <$> sockAddrToIP host
+            eReqs <- liftIO (runRedis conn $ R.get ip) >>= getEitherBody
 
-        eReqs <- liftIO $ runRedis conn $ R.get ip
+            case eReqs of
+                Nothing -> liftIO $ runRedis conn $ R.setex ip 3600 (B.fromString "1") >> pure ()
+                Just reqs -> do
+                    if (read $ BS.unpack reqs :: Integer) >= pastesPerHour then do
+                        ttl <- liftIO (runRedis conn $ R.ttl ip) >>= getEitherBody
+                        fail $ "Limit exceeded! Next paste can be stored in " <> show ttl <> "seconds"
+                    else do
+                        eIncr <- liftIO (runRedis conn $ R.incr ip)  >>= getEitherBody
+                        pure ()
 
-        case eReqs of
-            Left _ -> S.json $ getResponse False somethingWrong
-            Right Nothing -> liftIO $ runRedis conn $ R.setex ip 3600 (B.fromString "1") >> pure ()
-            Right (Just reqs) -> do
-                if (read $ BS.unpack reqs :: Integer) >= pastesPerHour then do
-                    eTtl <- liftIO $ runRedis conn $ R.ttl ip
-                    case eTtl of
-                        Left _ -> S.json $ getResponse False somethingWrong
-                        Right ttl -> S.json $ getResponse False $ "Limit exceeded! Next paste can be stored in " <> show ttl <> "seconds"
-                else do
-                    eIncr <- liftIO $ runRedis conn $ R.incr ip
-                    case eIncr of
-                        Left _ -> S.json $ getResponse False somethingWrong
-                        Right _ -> pure ()
-
-
-        if T.length pasteContent > 50000 then
-            S.json $ getResponse False "Paste too large!"
-        else if T.length pasteContent == 0 then
-            S.json $ getResponse False "Paste cannot be empty!"
-        else
-            do
-                uuid <- liftIO getAvailableUuid
-                pdir <- liftIO pastesDir
-                liftIO $ P.writeFile (makePath pdir uuid) (T.unpack pasteContent)
-                S.json $ getResponse True uuid
+            if T.length pasteContent > 50000 then
+                fail "Paste too large!"
+            else if T.length pasteContent == 0 then
+                fail "Paste cannot be empty!"
+            else
+                do
+                    uuid <- liftIO getAvailableUuid
+                    pdir <- liftIO pastesDir
+                    liftIO $ P.writeFile (makePath pdir uuid) (T.unpack pasteContent)
+                    pure uuid
+        runBodyRes res
 
     S.get ("paste" <//> var) $ \id -> do
-        case matchRegex uuidRegex id of
-            Nothing -> S.json $ getResponse False "Improper paste ID provided!"
-            _ -> do
-                pdir <- liftIO pastesDir
-                filePath <- liftIO $ absolutize $ makePath pdir id
-                if pdir `Data.List.isPrefixOf` filePath then
-                    do
+        res <- runSpockResT $ do
+            case matchRegex uuidRegex id of
+                Nothing -> fail "Improper paste ID provided!"
+                _ -> do
+                    pdir <- liftIO pastesDir
+                    filePath <- liftIO $ absolutize $ makePath pdir id
+                    if pdir `Data.List.isPrefixOf` filePath then do
                         doesExist <- liftIO $ doesFileExist filePath
-                        if doesExist then
-                            do
-                                output <- liftIO $ P.readFile filePath
-                                text $ T.pack output
-                        else
-                            do
-                                S.json $ getResponse False "This paste does not exist!" 
-                else
-                    do
-                        S.json $ getResponse False "Can't access pastes outside the paste dir!"
+                        if doesExist then do
+                            do 
+                                paste <- liftIO $ P.readFile filePath
+                                lift $ text $ T.pack paste
+                        else fail "This paste does not exist!" 
+                    else fail "Can't access pastes outside the paste dir!"
+        runBodyRes' res

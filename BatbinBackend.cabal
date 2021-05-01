@@ -12,6 +12,7 @@ executable BatbinBackend
   main-is:             Main.hs
   other-modules:       Utils
                      , Routes
+                     , SpockRes
   hs-source-dirs:      src
   build-depends:       base >=4.8 && <4.14
                      , Spock
@@ -29,4 +30,5 @@ executable BatbinBackend
                      , mtl
                      , bytestring
                      , regex-compat
+                     , transformers
   default-language:    Haskell2010
