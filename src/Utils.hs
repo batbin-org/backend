@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveGeneric  #-}
 {-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE FlexibleInstances, UndecidableInstances #-}
 
 module Utils where
 

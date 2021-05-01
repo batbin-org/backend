@@ -18,28 +18,14 @@ import Network.Wai (remoteHost)
 import Text.Regex
 import SpockRes
 
-pastesPerHour = 80
+pastesPerHour = 100
 uuidRegex = mkRegex "^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$"
-
--- getOutput :: SpockResT (ActionT m ())
-
-errProneFunc :: Either String Integer
-errProneFunc = Left "Oh no, an error!"
-
-errProneFunc2 :: Either String Integer
-errProneFunc2 = Right 2
 
 app :: Server ()
 app = do
     conn <- liftIO $ checkedConnect defaultConnectInfo
 
     S.get root $ html "<h1>Batbin API</h1>"
-
-    S.get "test4" $ do
-        res <- runSpockResT $ do
-            pasteContent <- lift $ param' "content"
-            pure $ "Hello, transformer" ++ pasteContent
-        runBodyRes res
 
     S.post "paste" $ do
         res <- runSpockResT $ do

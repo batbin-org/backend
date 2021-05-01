@@ -1,4 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
 module SpockRes where
 
 import Utils
@@ -65,8 +64,8 @@ runBodyRes' res = do
         Success msg -> json $ getResponse True "Operation succeeded"
 
 -- Monad Transformer --
--- runSpockResT :: SpockResT m a -> m (SpockRes a)
 newtype SpockResT m a = SpockResT { runSpockResT :: m (SpockRes a) }
+-- runSpockResT :: SpockResT m a -> m (SpockRes a)
 
 instance (Monad m) => Functor (SpockResT m) where
     fmap = fmap
