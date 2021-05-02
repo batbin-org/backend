@@ -1,3 +1,6 @@
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE UndecidableInstances #-}
+
 module SpockRes where
 
 import Utils
@@ -11,6 +14,17 @@ import System.Console.ANSI
 somethingWrong = "Something went wrong!"
 
 type Res = SpockResT (WebStateM () () ()) [Char]
+
+class PrettyPrintable a where
+  prettyPrint :: a -> String
+
+instance PrettyPrintable String where
+   prettyPrint = id
+
+-- Let's keep this commented away till I can
+-- figure out overloaded instances properly
+-- instance (Show a) => PrettyPrintable a where
+--     prettyPrint = show
 
 getEitherBody :: Show e => MonadIO m => Either e a -> SpockResT m a
 getEitherBody ev = do
@@ -32,7 +46,7 @@ getMaybeBody ev = do
             fail somethingWrong
         Just val -> pure val
 
-runBody :: MonadIO m => Show a => SpockResT m a -> ActionT m ()
+runBody :: MonadIO m => PrettyPrintable a => SpockResT m a -> ActionT m ()
 runBody sr = do
     res <- lift $ runSpockResT sr
     case res of
@@ -41,9 +55,9 @@ runBody sr = do
             liftIO $ putStrLn $ "ERR> " <> msg
             liftIO $ setSGR [SetColor Foreground Vivid Yellow]
             json $ getResponse False msg
-        Success msg -> json $ getResponse True $ show msg
+        Success msg -> json $ getResponse True $ prettyPrint msg
 
-runBodyRes :: MonadIO m => Show a => SpockRes a -> ActionT m ()
+runBodyRes :: MonadIO m => PrettyPrintable a => SpockRes a -> ActionT m ()
 runBodyRes res = do
     case res of
         Failure msg -> do
@@ -51,7 +65,7 @@ runBodyRes res = do
             liftIO $ putStrLn $ "ERR> " <> msg
             liftIO $ setSGR [SetColor Foreground Vivid Yellow]
             json $ getResponse False msg
-        Success msg -> json $ getResponse True $ show msg
+        Success msg -> json $ getResponse True $ prettyPrint msg
 
 runBodyRes' :: MonadIO m => SpockRes a -> ActionT m ()
 runBodyRes' res = do

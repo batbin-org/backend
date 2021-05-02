@@ -9,5 +9,5 @@ cradle:
     - path: "src/Routes.hs"
       component: "BatbinBackend:exe:BatbinBackend"
 
-    - path: "src/EitherRes.hs"
+    - path: "src/SpockRes.hs"
       component: "BatbinBackend:exe:BatbinBackend"
