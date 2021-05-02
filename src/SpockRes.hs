@@ -85,7 +85,7 @@ instance (Monad m) => Functor (SpockResT m) where
     fmap = fmap
 
 instance (Monad m) => Applicative (SpockResT m) where
-    pure x = SpockResT $ pure $ pure x
+    pure = SpockResT . pure . pure
     (<*>) = (<*>)
 
 instance (Monad m) => Monad (SpockResT m) where
