@@ -20,6 +20,12 @@ import SpockRes
 pastesPerHour = 100
 uuidRegex = mkRegex "^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$"
 
+contentTypeHeader :: ActionCtxT b (WebStateM () () ()) b
+contentTypeHeader =
+  do ctx <- getContext
+     setHeader "Content-Type" "text/plain"
+     pure ctx
+
 app :: Server ()
 app = do
     conn <- liftIO $ checkedConnect defaultConnectInfo
@@ -41,7 +47,7 @@ app = do
                         ttl <- liftIO (runRedis conn $ R.ttl ip) >>= getEitherBody
                         fail $ "Limit exceeded! Next paste can be stored in " <> show ttl <> "seconds"
                     else do
-                        eIncr <- liftIO (runRedis conn $ R.incr ip)  >>= getEitherBody
+                        eIncr <- liftIO (runRedis conn $ R.incr ip) >>= getEitherBody
                         pure ()
 
             if T.length pasteContent > 50000 then
@@ -56,7 +62,7 @@ app = do
                     pure uuid
         runBodyRes res
 
-    S.get ("paste" <//> var) $ \id -> do
+    prehook contentTypeHeader $ S.get ("paste" <//> var) $ \id -> do
         res <- runSpockResT $ do
             case matchRegex uuidRegex id of
                 Nothing -> fail "Improper paste ID provided!"
